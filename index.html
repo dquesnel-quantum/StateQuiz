@@ -14,6 +14,7 @@
       align-items: center;
       justify-content: center;
       margin: 0;
+      overflow: hidden;
     }
 
     .card {
@@ -22,10 +23,24 @@
       padding: 24px;
       width: 340px;
       box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+      position: relative;
+      z-index: 2;
     }
 
+    /* Shake animation */
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+      100% { transform: translateX(0); }
+    }
+
+    .shake { animation: shake 0.4s; }
+
     h1 { text-align: center; margin: 8px 0; font-size: 26px; }
-    h2 { text-align: center; color: #374151; font-size: 18px; }
+    h2 { text-align: center; color: #374151; font-size: 18px; margin: 0; }
 
     .progress-wrapper {
       background: #e5e7eb;
@@ -39,7 +54,7 @@
       height: 100%;
       background: linear-gradient(90deg, #22c55e, #3b82f6);
       width: 0%;
-      transition: width 0.4s ease;
+      transition: width 0.3s ease;
     }
 
     .choices {
@@ -58,16 +73,8 @@
     }
 
     button:hover { background: #bae6fd; }
-
-    button.correct {
-      background: #22c55e;
-      color: white;
-    }
-
-    button.wrong {
-      background: #ef4444;
-      color: white;
-    }
+    button.correct { background: #22c55e; color: white; }
+    button.wrong { background: #ef4444; color: white; }
 
     .next {
       margin-top: 18px;
@@ -83,77 +90,80 @@
       font-size: 14px;
       color: #555;
     }
+
+    /* Confetti */
+    .confetti {
+      position: fixed;
+      top: -10px;
+      width: 10px;
+      height: 10px;
+      animation: fall 3s linear forwards;
+      z-index: 1;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(110vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
 
-<div class="card" id="app"></div>
+<div class="card" id="card">
+  <div id="app"></div>
+</div>
 
-<!-- SOUND EFFECTS -->
-<audio id="correctSound" src="data:audio/wav;base64,UklGRngAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVwAAAAA/////wAAAP//AAD///8AAP//AAD//v8AAP//AAD///8AAP//AAD//v8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8A"></audio>
-
-<audio id="wrongSound" src="data:audio/wav;base64,UklGRiAAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAA/////wAAAP//AAD///8AAP//AAD///8AAP//AAD///8A"></audio>
+<!-- Sounds -->
+<audio id="correctSound" src="data:audio/wav;base64,UklGRngAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVwAAAAA/////wAAAP//AAD///8AAP//AAD//v8AAP//AAD///8A"></audio>
+<audio id="wrongSound" src="data:audio/wav;base64,UklGRiAAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAA/////wAAAP//AAD///8A"></audio>
 
 <script>
 const states = [
-  { state:"Alabama", capital:"Montgomery" },
-  { state:"Alaska", capital:"Juneau" },
-  { state:"Arizona", capital:"Phoenix" },
-  { state:"Arkansas", capital:"Little Rock" },
-  { state:"California", capital:"Sacramento" },
-  { state:"Colorado", capital:"Denver" },
-  { state:"Connecticut", capital:"Hartford" },
-  { state:"Delaware", capital:"Dover" },
-  { state:"Florida", capital:"Tallahassee" },
-  { state:"Georgia", capital:"Atlanta" },
-  { state:"Hawaii", capital:"Honolulu" },
-  { state:"Idaho", capital:"Boise" },
-  { state:"Illinois", capital:"Springfield" },
-  { state:"Indiana", capital:"Indianapolis" },
-  { state:"Iowa", capital:"Des Moines" },
-  { state:"Kansas", capital:"Topeka" },
-  { state:"Kentucky", capital:"Frankfort" },
-  { state:"Louisiana", capital:"Baton Rouge" },
-  { state:"Maine", capital:"Augusta" },
-  { state:"Maryland", capital:"Annapolis" },
-  { state:"Massachusetts", capital:"Boston" },
-  { state:"Michigan", capital:"Lansing" },
-  { state:"Minnesota", capital:"St. Paul" },
-  { state:"Mississippi", capital:"Jackson" },
-  { state:"Missouri", capital:"Jefferson City" },
-  { state:"Montana", capital:"Helena" },
-  { state:"Nebraska", capital:"Lincoln" },
-  { state:"Nevada", capital:"Carson City" },
-  { state:"New Hampshire", capital:"Concord" },
-  { state:"New Jersey", capital:"Trenton" },
-  { state:"New Mexico", capital:"Santa Fe" },
-  { state:"New York", capital:"Albany" },
-  { state:"North Carolina", capital:"Raleigh" },
-  { state:"North Dakota", capital:"Bismarck" },
-  { state:"Ohio", capital:"Columbus" },
-  { state:"Oklahoma", capital:"Oklahoma City" },
-  { state:"Oregon", capital:"Salem" },
-  { state:"Pennsylvania", capital:"Harrisburg" },
-  { state:"Rhode Island", capital:"Providence" },
-  { state:"South Carolina", capital:"Columbia" },
-  { state:"South Dakota", capital:"Pierre" },
-  { state:"Tennessee", capital:"Nashville" },
-  { state:"Texas", capital:"Austin" },
-  { state:"Utah", capital:"Salt Lake City" },
-  { state:"Vermont", capital:"Montpelier" },
-  { state:"Virginia", capital:"Richmond" },
-  { state:"Washington", capital:"Olympia" },
-  { state:"West Virginia", capital:"Charleston" },
-  { state:"Wisconsin", capital:"Madison" },
-  { state:"Wyoming", capital:"Cheyenne" }
+  {state:"Alabama",capital:"Montgomery"},{state:"Alaska",capital:"Juneau"},
+  {state:"Arizona",capital:"Phoenix"},{state:"Arkansas",capital:"Little Rock"},
+  {state:"California",capital:"Sacramento"},{state:"Colorado",capital:"Denver"},
+  {state:"Connecticut",capital:"Hartford"},{state:"Delaware",capital:"Dover"},
+  {state:"Florida",capital:"Tallahassee"},{state:"Georgia",capital:"Atlanta"},
+  {state:"Hawaii",capital:"Honolulu"},{state:"Idaho",capital:"Boise"},
+  {state:"Illinois",capital:"Springfield"},{state:"Indiana",capital:"Indianapolis"},
+  {state:"Iowa",capital:"Des Moines"},{state:"Kansas",capital:"Topeka"},
+  {state:"Kentucky",capital:"Frankfort"},{state:"Louisiana",capital:"Baton Rouge"},
+  {state:"Maine",capital:"Augusta"},{state:"Maryland",capital:"Annapolis"},
+  {state:"Massachusetts",capital:"Boston"},{state:"Michigan",capital:"Lansing"},
+  {state:"Minnesota",capital:"St. Paul"},{state:"Mississippi",capital:"Jackson"},
+  {state:"Missouri",capital:"Jefferson City"},{state:"Montana",capital:"Helena"},
+  {state:"Nebraska",capital:"Lincoln"},{state:"Nevada",capital:"Carson City"},
+  {state:"New Hampshire",capital:"Concord"},{state:"New Jersey",capital:"Trenton"},
+  {state:"New Mexico",capital:"Santa Fe"},{state:"New York",capital:"Albany"},
+  {state:"North Carolina",capital:"Raleigh"},{state:"North Dakota",capital:"Bismarck"},
+  {state:"Ohio",capital:"Columbus"},{state:"Oklahoma",capital:"Oklahoma City"},
+  {state:"Oregon",capital:"Salem"},{state:"Pennsylvania",capital:"Harrisburg"},
+  {state:"Rhode Island",capital:"Providence"},{state:"South Carolina",capital:"Columbia"},
+  {state:"South Dakota",capital:"Pierre"},{state:"Tennessee",capital:"Nashville"},
+  {state:"Texas",capital:"Austin"},{state:"Utah",capital:"Salt Lake City"},
+  {state:"Vermont",capital:"Montpelier"},{state:"Virginia",capital:"Richmond"},
+  {state:"Washington",capital:"Olympia"},{state:"West Virginia",capital:"Charleston"},
+  {state:"Wisconsin",capital:"Madison"},{state:"Wyoming",capital:"Cheyenne"}
 ];
 
 let index = 0;
 let score = 0;
 let selected = null;
+let currentChoices = [];
 
-function shuffle(arr) {
-  return [...arr].sort(() => Math.random() - 0.5);
+function shuffle(a) {
+  return [...a].sort(() => Math.random() - 0.5);
+}
+
+function generateChoices() {
+  const current = states[index];
+  const wrong = shuffle(states)
+    .filter(s => s.capital !== current.capital)
+    .slice(0,3)
+    .map(s => s.capital);
+  currentChoices = shuffle([current.capital, ...wrong]);
 }
 
 function render() {
@@ -161,22 +171,18 @@ function render() {
   const progress = Math.round((index / states.length) * 100);
 
   if (index >= states.length) {
+    celebrate();
     app.innerHTML = `
-      <h1>🎉 Great Job!</h1>
-      <h2>You scored ${score} out of ${states.length} ⭐</h2>
+      <h1>🏆 You Did It!</h1>
+      <h2>Final Score: ${score} / ${states.length}</h2>
+      <h1>${getReward()}</h1>
       <button class="next" onclick="restart()">Play Again</button>
     `;
     return;
   }
 
+  if (currentChoices.length === 0) generateChoices();
   const current = states[index];
-  const choices = shuffle([
-    current.capital,
-    ...shuffle(states)
-      .filter(s => s.capital !== current.capital)
-      .slice(0, 3)
-      .map(s => s.capital)
-  ]);
 
   app.innerHTML = `
     <div class="progress-wrapper">
@@ -187,21 +193,15 @@ function render() {
     <h1>${current.state}</h1>
 
     <div class="choices">
-      ${choices.map(c => `
+      ${currentChoices.map(c => `
         <button onclick="pick('${c}')" class="${
-          selected
-            ? c === current.capital
-              ? 'correct'
-              : c === selected
-              ? 'wrong'
-              : ''
-            : ''
+          selected ? (c === current.capital ? 'correct' : c === selected ? 'wrong' : '') : ''
         }">${c}</button>
-      `).join("")}
+      `).join('')}
     </div>
 
-    ${selected ? `<button class="next" onclick="next()">Next →</button>` : ""}
-    <div class="footer">Question ${index + 1} of ${states.length}</div>
+    ${selected ? '<button class="next" onclick="next()">Next →</button>' : ''}
+    <div class="footer">Question ${index+1} of ${states.length}</div>
   `;
 }
 
@@ -214,26 +214,48 @@ function pick(choice) {
     document.getElementById("correctSound").play();
   } else {
     document.getElementById("wrongSound").play();
+    const card = document.getElementById("card");
+    card.classList.add("shake");
+    setTimeout(() => card.classList.remove("shake"), 400);
   }
-
   render();
 }
 
 function next() {
-  selected = null;
   index++;
+  selected = null;
+  currentChoices = [];
   render();
+}
+
+function getReward() {
+  const pct = score / states.length;
+  if (pct >= 0.9) return "🌟 Geography Superstar!";
+  if (pct >= 0.75) return "🎉 State Star!";
+  if (pct >= 0.5) return "👍 Nice Work!";
+  return "💪 Keep Practicing!";
+}
+
+function celebrate() {
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.backgroundColor = `hsl(${Math.random()*360}, 90%, 60%)`;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3000);
+  }
 }
 
 function restart() {
   index = 0;
   score = 0;
   selected = null;
+  currentChoices = [];
   render();
 }
 
 render();
 </script>
-
 </body>
 </html>
