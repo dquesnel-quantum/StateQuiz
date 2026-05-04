@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>States & Capitals Fun Quiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      font-family: "Comic Sans MS", system-ui, sans-serif;
+      background: linear-gradient(135deg, #dbeafe, #fef3c7);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+
+    .card {
+      background: white;
+      border-radius: 18px;
+      padding: 24px;
+      width: 340px;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+
+    h1 { text-align: center; margin: 8px 0; font-size: 26px; }
+    h2 { text-align: center; color: #374151; font-size: 18px; }
+
+    .progress-wrapper {
+      background: #e5e7eb;
+      border-radius: 999px;
+      height: 14px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #3b82f6);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .choices {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 14px;
+      border: none;
+      background: #e0f2fe;
+      cursor: pointer;
+    }
+
+    button:hover { background: #bae6fd; }
+
+    button.correct {
+      background: #22c55e;
+      color: white;
+    }
+
+    button.wrong {
+      background: #ef4444;
+      color: white;
+    }
+
+    .next {
+      margin-top: 18px;
+      width: 100%;
+      font-size: 18px;
+      background: #f59e0b;
+      color: white;
+    }
+
+    .footer {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card" id="app"></div>
+
+<!-- SOUND EFFECTS -->
+<audio id="correctSound" src="data:audio/wav;base64,UklGRngAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVwAAAAA/////wAAAP//AAD///8AAP//AAD//v8AAP//AAD///8AAP//AAD//v8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8A"></audio>
+
+<audio id="wrongSound" src="data:audio/wav;base64,UklGRiAAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAA/////wAAAP//AAD///8AAP//AAD///8AAP//AAD///8A"></audio>
+
+<script>
+const states = [
+  { state:"Alabama", capital:"Montgomery" },
+  { state:"Alaska", capital:"Juneau" },
+  { state:"Arizona", capital:"Phoenix" },
+  { state:"Arkansas", capital:"Little Rock" },
+  { state:"California", capital:"Sacramento" },
+  { state:"Colorado", capital:"Denver" },
+  { state:"Connecticut", capital:"Hartford" },
+  { state:"Delaware", capital:"Dover" },
+  { state:"Florida", capital:"Tallahassee" },
+  { state:"Georgia", capital:"Atlanta" },
+  { state:"Hawaii", capital:"Honolulu" },
+  { state:"Idaho", capital:"Boise" },
+  { state:"Illinois", capital:"Springfield" },
+  { state:"Indiana", capital:"Indianapolis" },
+  { state:"Iowa", capital:"Des Moines" },
+  { state:"Kansas", capital:"Topeka" },
+  { state:"Kentucky", capital:"Frankfort" },
+  { state:"Louisiana", capital:"Baton Rouge" },
+  { state:"Maine", capital:"Augusta" },
+  { state:"Maryland", capital:"Annapolis" },
+  { state:"Massachusetts", capital:"Boston" },
+  { state:"Michigan", capital:"Lansing" },
+  { state:"Minnesota", capital:"St. Paul" },
+  { state:"Mississippi", capital:"Jackson" },
+  { state:"Missouri", capital:"Jefferson City" },
+  { state:"Montana", capital:"Helena" },
+  { state:"Nebraska", capital:"Lincoln" },
+  { state:"Nevada", capital:"Carson City" },
+  { state:"New Hampshire", capital:"Concord" },
+  { state:"New Jersey", capital:"Trenton" },
+  { state:"New Mexico", capital:"Santa Fe" },
+  { state:"New York", capital:"Albany" },
+  { state:"North Carolina", capital:"Raleigh" },
+  { state:"North Dakota", capital:"Bismarck" },
+  { state:"Ohio", capital:"Columbus" },
+  { state:"Oklahoma", capital:"Oklahoma City" },
+  { state:"Oregon", capital:"Salem" },
+  { state:"Pennsylvania", capital:"Harrisburg" },
+  { state:"Rhode Island", capital:"Providence" },
+  { state:"South Carolina", capital:"Columbia" },
+  { state:"South Dakota", capital:"Pierre" },
+  { state:"Tennessee", capital:"Nashville" },
+  { state:"Texas", capital:"Austin" },
+  { state:"Utah", capital:"Salt Lake City" },
+  { state:"Vermont", capital:"Montpelier" },
+  { state:"Virginia", capital:"Richmond" },
+  { state:"Washington", capital:"Olympia" },
+  { state:"West Virginia", capital:"Charleston" },
+  { state:"Wisconsin", capital:"Madison" },
+  { state:"Wyoming", capital:"Cheyenne" }
+];
+
+let index = 0;
+let score = 0;
+let selected = null;
+
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+function render() {
+  const app = document.getElementById("app");
+  const progress = Math.round((index / states.length) * 100);
+
+  if (index >= states.length) {
+    app.innerHTML = `
+      <h1>🎉 Great Job!</h1>
+      <h2>You scored ${score} out of ${states.length} ⭐</h2>
+      <button class="next" onclick="restart()">Play Again</button>
+    `;
+    return;
+  }
+
+  const current = states[index];
+  const choices = shuffle([
+    current.capital,
+    ...shuffle(states)
+      .filter(s => s.capital !== current.capital)
+      .slice(0, 3)
+      .map(s => s.capital)
+  ]);
+
+  app.innerHTML = `
+    <div class="progress-wrapper">
+      <div class="progress-bar" style="width:${progress}%"></div>
+    </div>
+
+    <h2>What is the capital of</h2>
+    <h1>${current.state}</h1>
+
+    <div class="choices">
+      ${choices.map(c => `
+        <button onclick="pick('${c}')" class="${
+          selected
+            ? c === current.capital
+              ? 'correct'
+              : c === selected
+              ? 'wrong'
+              : ''
+            : ''
+        }">${c}</button>
+      `).join("")}
+    </div>
+
+    ${selected ? `<button class="next" onclick="next()">Next →</button>` : ""}
+    <div class="footer">Question ${index + 1} of ${states.length}</div>
+  `;
+}
+
+function pick(choice) {
+  if (selected) return;
+  selected = choice;
+
+  if (choice === states[index].capital) {
+    score++;
+    document.getElementById("correctSound").play();
+  } else {
+    document.getElementById("wrongSound").play();
+  }
+
+  render();
+}
+
+function next() {
+  selected = null;
+  index++;
+  render();
+}
+
+function restart() {
+  index = 0;
+  score = 0;
+  selected = null;
+  render();
+}
+
+render();
+</script>
+
+</body>
+</html>
